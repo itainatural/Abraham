@@ -426,24 +426,32 @@ function getSelectedFrame(): FrameNode | null {
 
 // Apply auto-layout adjustments based on knowledge base guidelines
 function applyAutoLayoutRules(frame: FrameNode, format: Format): void {
-  frame.layoutMode = 'VERTICAL';
-  frame.paddingTop = 64;
-  frame.paddingBottom = 64;
-  frame.paddingLeft = 40;
-  frame.paddingRight = 40;
-  frame.itemSpacing = 24;
+  // Set frame size according to format
+  frame.resize(format.bg.width, format.bg.height);
 
-  frame.children.forEach(child => {
-    if (child.type === 'FRAME' || child.type === 'COMPONENT' || child.type === 'INSTANCE') {
-      const childFrame = child as FrameNode;
-      if (childFrame.layoutMode === 'HORIZONTAL' || childFrame.layoutMode === 'VERTICAL') {
-        applyAutoLayoutRules(childFrame, format);
-      }
-      if (childFrame.primaryAxisSizingMode === 'AUTO') {
-        childFrame.layoutAlign = 'STRETCH';
-      }
-    }
-  });
+  // Find and update title
+  const titleNode = frame.findOne(node => node.name === 'Title') as TextNode;
+  if (titleNode) {
+    titleNode.x = format.title.x || 0;
+    titleNode.y = format.title.y || 0;
+    titleNode.fontSize = format.title.size;
+  }
+
+  // Find and update body
+  const bodyNode = frame.findOne(node => node.name === 'Body') as TextNode;
+  if (bodyNode) {
+    bodyNode.x = format.body.x || 0;
+    bodyNode.y = format.body.y || 0;
+    bodyNode.fontSize = format.body.size;
+  }
+
+  // Find and update CTA
+  const ctaNode = frame.findOne(node => node.name === 'CTA') as TextNode;
+  if (ctaNode) {
+    ctaNode.x = format['cta-label'].x || 0;
+    ctaNode.y = format['cta-label'].y || 0;
+    ctaNode.fontSize = format['cta-label'].size;
+  }
 }
 
 // Main function

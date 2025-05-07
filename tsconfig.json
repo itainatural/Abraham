@@ -1,15 +1,12 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "module": "es6",
-    "moduleResolution": "node",
-    "lib": ["es2015", "dom"],
+    "module": "none",
+    "lib": ["es6", "dom"],
     "strict": true,
-    "skipLibCheck": true,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./node_modules/@figma"
-    ],
-    "types": ["@figma/plugin-typings"]
-  }
+    "typeRoots": ["./node_modules/@figma"],
+    "types": ["@figma/plugin-typings"],
+    "outDir": "."
+  },
+  "include": ["src/**/*"]
 }
