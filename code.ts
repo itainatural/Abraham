@@ -25,15 +25,14 @@ interface ElementStyle {
   weight: string;
   color: { r: number; g: number; b: number };
   fill?: { type: string; color: { r: number; g: number; b: number } };
-  baseSize?: number;
 }
 
 interface ElementPosition {
-  x?: number;
-  y?: number;
+  x: number;
+  y: number;
+  fontSize?: number;
   w?: number;
   h?: number;
-  fontSize?: number;
 }
 
 interface Background {
@@ -73,8 +72,8 @@ const formatsByPlatform: Record<Platform, Format[]> = {
     { name: "1200x628", w: 1200, h: 628 }
   ],
   'Facebook': [
-    { name: "1080x1920", w: 1080, h: 1920 },
-    { name: "1080x1350", w: 1080, h: 1350 }
+    { name: "1080x1350", w: 1080, h: 1350 },
+    { name: "1080x1920", w: 1080, h: 1920 }
   ],
   'Native': [
     { name: "300x250", w: 300, h: 250 },   // Standard Display
@@ -86,6 +85,30 @@ const formatsByPlatform: Record<Platform, Format[]> = {
 
 // Show the UI
 figma.showUI(__html__, { width: 240, height: 480 });
+
+// Function to generate variants
+async function generateVariants(sizes: string[]) {
+  const selection = figma.currentPage.selection[0] as FrameNode;
+  const parent = selection.parent;
+  
+  if (!parent) {
+    throw new Error('Selected frame must be inside a parent frame or page');
+  }
+  
+  let xOffset = selection.x + selection.width + 100; // Start 100px to the right of original
+  
+  for (const size of sizes) {
+    const [width, height] = size.split('x').map(Number);
+    const variant = selection.clone();
+    variant.name = `${selection.name} ${width}x${height}`;
+    variant.resize(width, height);
+    variant.x = xOffset;
+    variant.y = selection.y; // Keep same vertical position
+    parent.appendChild(variant);
+    
+    xOffset += width + 100; // Add spacing between variants
+  }
+}
 
 // Handle messages from the UI
 figma.ui.onmessage = async (msg: UIMessage) => {
@@ -208,142 +231,89 @@ function getOrCreateTextNode(frame: FrameNode, name: string): TextNode {
   return text;
 }
 
-async function applyLayout(frame: FrameNode, formatName: string, data: any) {
-  const guidelines = await loadGuidelines();
-  const guideline = guidelines.formats[formatName];
-  const styles = guidelines.styles;
-
-  await Promise.all([
-    figma.loadFontAsync({ family: "Inter", style: "Bold" }),
-    figma.loadFontAsync({ family: "Inter", style: "Regular" }),
-    figma.loadFontAsync({ family: "Inter", style: "Medium" })
-  ]);
-
-  // Utility to apply text styles
-  const applyTextProps = (textNode: TextNode, type: 'title' | 'body' | 'cta-label', content: string) => {
-    const style = styles[type] as ElementStyle;
-    const pos = guideline[type] as ElementPosition;
-
-    if (!style || !pos) return;
-
-    textNode.characters = content;
-    const baseSize = style.baseSize ?? (type === 'title' ? 56 : type === 'body' ? 24 : 18);
-    textNode.fontSize = baseSize * (fontScale[formatName as keyof typeof fontScale] ?? 1.0);
-    textNode.fontName = { family: style.font ?? 'Inter', style: style.weight ?? 'Regular' };
-    textNode.fills = [{ type: 'SOLID', color: style.color ?? { r: 0, g: 0, b: 0 } }];
-    textNode.x = pos.x ?? 0;
-    textNode.y = pos.y ?? 0;
-    textNode.textAutoResize = "HEIGHT";
-  };
-
-  // Title
-  const title = frame.findOne(n => n.name === 'title') as TextNode;
-  if (title) applyTextProps(title, "title", data.title || "Default Title");
-
-  // Body
-  const body = frame.findOne(n => n.name === 'body') as TextNode;
-  if (body) applyTextProps(body, "body", data.body || "Body copy here");
-
-  // CTA
-  const ctaLabel = frame.findOne(n => n.name === 'cta-label') as TextNode;
-  if (ctaLabel) applyTextProps(ctaLabel, "cta-label", data.cta || "CTA");
-
-  // Background
-  const bg = frame.findOne(n => n.name === "bg");
-  if (bg && "resize" in bg && guideline.bg) {
-    const bgDims = guideline.bg;
-    const width = safeNumber(bgDims.w, frame.width);
-    const height = safeNumber(bgDims.h, frame.height);
-    bg.resize(width, height);
-    bg.x = safeNumber(bgDims.x, 0);
-    bg.y = safeNumber(bgDims.y, 0);
+/** Apply layout adjustments based on format */
+async function applyLayout(frame: FrameNode, formatName: string): Promise<void> {
+  // Load guidelines
+  const storedGuidelines = await figma.clientStorage.getAsync('guidelines') || defaultGuidelines;
+  if (!storedGuidelines || !storedGuidelines.formats[formatName]) {
+    throw new Error(`No guidelines found for format ${formatName}`);
   }
 
-  // Overlay
-  const overlay = frame.findOne(n => n.name === "overlay");
-  if (overlay && "resize" in overlay && guideline.overlay) {
-    const olDims = guideline.overlay;
-    const width = safeNumber(olDims.w, frame.width);
-    const height = safeNumber(olDims.h, frame.height);
-    overlay.resize(width, height);
-    overlay.x = safeNumber(olDims.x, 0);
-    overlay.y = safeNumber(olDims.y, 0);
+  const formatGuide = storedGuidelines.formats[formatName];
+
+  // Get all nodes
+  const bgNode = frame.findOne((n: SceneNode) => n.name === 'bg') as RectangleNode;
+  const overlayNode = frame.findOne((n: SceneNode) => n.name === 'overlay') as RectangleNode;
+  const titleNode = frame.findOne((n: SceneNode) => n.name === 'title') as TextNode;
+  const bodyNode = frame.findOne((n: SceneNode) => n.name === 'body') as TextNode;
+  const ctaLabelNode = frame.findOne((n: SceneNode) => n.name === 'cta-label') as TextNode;
+
+  // Resize background and overlay
+  if (bgNode) {
+    bgNode.resize(formatGuide.bg.w, formatGuide.bg.h);
+    bgNode.x = formatGuide.bg.x || 0;
+    bgNode.y = formatGuide.bg.y || 0;
   }
 
-  // Content group auto layout fallback
-  const contentGroup = frame.findOne(n => n.name === "content-group") as FrameNode;
-  if (contentGroup) {
-    contentGroup.layoutMode = "VERTICAL";
-    contentGroup.itemSpacing = safeNumber(guidelines.layout.autoLayout.spacing, 24);
-    contentGroup.paddingTop = safeNumber(guidelines.layout.autoLayout.padding.vertical, 64);
-    contentGroup.paddingBottom = safeNumber(guidelines.layout.autoLayout.padding.vertical, 64);
-    contentGroup.paddingLeft = safeNumber(guidelines.layout.autoLayout.padding.horizontal, 40);
-    contentGroup.paddingRight = safeNumber(guidelines.layout.autoLayout.padding.horizontal, 40);
+  if (overlayNode) {
+    overlayNode.resize(formatGuide.bg.w, formatGuide.bg.h);
+    overlayNode.x = formatGuide.bg.x || 0;
+    overlayNode.y = formatGuide.bg.y || 0;
   }
 
-  // CTA group layout
-  const ctaGroup = frame.findOne(n => n.name === "cta-group") as FrameNode;
-  if (ctaGroup) {
-    ctaGroup.layoutMode = "HORIZONTAL";
-    ctaGroup.itemSpacing = safeNumber(guidelines.layout.ctaGroup.spacing, 24);
-    ctaGroup.paddingTop = safeNumber(guidelines.layout.ctaGroup.padding.vertical, 16);
-    ctaGroup.paddingBottom = safeNumber(guidelines.layout.ctaGroup.padding.vertical, 16);
-    ctaGroup.paddingLeft = safeNumber(guidelines.layout.ctaGroup.padding.horizontal, 24);
-    ctaGroup.paddingRight = safeNumber(guidelines.layout.ctaGroup.padding.horizontal, 24);
-  }
-
-  // Check and fix any overflow issues for frame elements
-  const textNodes = frame.findAll(n => n.type === 'TEXT') as TextNode[];
-  textNodes.forEach(text => {
-    const parent = text.parent;
-    if (parent && parent.type === 'FRAME') {
-      fixOverflow(text, (parent as FrameNode).height);
+  // Handle text nodes
+  if (titleNode) {
+    await figma.loadFontAsync({ family: "Inter", style: "Bold" });
+    titleNode.fontName = { family: "Inter", style: "Bold" };
+    titleNode.x = formatGuide.title.x;
+    titleNode.y = formatGuide.title.y;
+    if (formatGuide.title.fontSize) {
+      titleNode.fontSize = formatGuide.title.fontSize;
     }
-  });
-}
+  }
 
-// Helper to fix text overflow
-// Load guidelines from disk
-async function loadGuidelines(): Promise<Guidelines> {
-  try {
-    const response = await figma.clientStorage.getAsync('guidelines');
-    if (response) {
-      return response as Guidelines;
+  if (bodyNode) {
+    await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+    bodyNode.fontName = { family: "Inter", style: "Regular" };
+    bodyNode.x = formatGuide.body.x;
+    bodyNode.y = formatGuide.body.y;
+    if (formatGuide.body.fontSize) {
+      bodyNode.fontSize = formatGuide.body.fontSize;
     }
-  } catch (error) {
-    console.error('Error loading guidelines:', error);
   }
 
-  // If no guidelines found in storage, use default
-  return defaultGuidelines;
-}
-
-// Helper to fix text overflow
-function fixOverflow(text: TextNode, maxHeight: number) {
-  if (typeof text.height !== 'number' || typeof text.fontSize !== 'number') return;
-  while (text.height > maxHeight && text.fontSize > 12) {
-    text.fontSize = Math.max(text.fontSize * 0.95, 12);
+  if (ctaLabelNode) {
+    await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+    ctaLabelNode.fontName = { family: "Inter", style: "Regular" };
+    ctaLabelNode.x = formatGuide['cta-label'].x;
+    ctaLabelNode.y = formatGuide['cta-label'].y;
+    if (formatGuide['cta-label'].fontSize) {
+      ctaLabelNode.fontSize = formatGuide['cta-label'].fontSize;
+    }
   }
+
+  // Check and fix any overflow issues
+  handleOverflow(frame);
 }
 
-// Font scale map for different formats
-const fontScale = {
-  "1200x1200": 1.0,
-  "960x1200": 0.8944,
-  "1200x628": 0.7234,
-  "1080x1920": 1.2
-} as const;
-
-// Helper for safe number handling
-function safeNumber(value: number | undefined, defaultValue: number): number {
-  return typeof value === 'number' ? value : defaultValue;
+// Check and fix any overflow issues
+handleOverflow(frame);
 }
 
 // Base template structure for creating variants
-const baseTemplate = {
+const baseTemplate: {
   frame: {
-    name: "template",
-    type: "FRAME",
+    name: string;
+    size: string;
+    children: {
+      name: string;
+      type: string;
+    }[];
+  };
+} = {
+  frame: {
+    name: "Template/1x1",
+    size: "1200x1200",
     children: [
       {
         name: "bg",
@@ -354,6 +324,71 @@ const baseTemplate = {
         type: "RECTANGLE"
       }
     ]
+  }
+};
+      weight: "Regular",
+      color: { r: 1, g: 1, b: 1 }
+    },
+    bg: {
+      fill: { type: 'SOLID', color: { r: 1, g: 1, b: 1 } }
+    },
+    overlay: {
+      fill: { type: 'SOLID', color: { r: 0, g: 0, b: 0 }, "opacity": 0.5 }
+    }
+  },
+  formats: {
+    "1200x1200": {
+      bg: { w: 1200, h: 1200 },
+      title: { x: 80, y: 100, fontSize: 56 },
+      body: { x: 80, y: 200, fontSize: 28 },
+      "cta-label": { x: 80, y: 1000, fontSize: 24 },
+      bg: { x: 0, y: 0, w: 1200, h: 1200 },
+      overlay: { x: 0, y: 0, w: 1200, h: 1200 }
+    },
+    "960x1200": {
+      bg: { w: 960, h: 1200 },
+      title: { x: 80, y: 100, fontSize: 56 },
+      body: { x: 80, y: 200, fontSize: 28 },
+      "cta-label": { x: 80, y: 1000, fontSize: 24 },
+      bg: { x: 0, y: 0, w: 960, h: 1200 },
+      overlay: { x: 0, y: 0, w: 960, h: 1200 }
+    },
+    "1200x628": {
+      bg: { w: 1200, h: 628 },
+      title: { x: 80, y: 80, fontSize: 48 },
+      body: { x: 80, y: 160, fontSize: 24 },
+      "cta-label": { x: 80, y: 500, fontSize: 24 },
+      bg: { x: 0, y: 0, w: 1200, h: 628 },
+      overlay: { x: 0, y: 0, w: 1200, h: 628 }
+    },
+    "1080x1920": {
+      bg: { w: 1080, h: 1920 },
+      title: { x: 80, y: 240, fontSize: 64 },
+      body: { x: 80, y: 360, fontSize: 32 },
+      "cta-label": { x: 80, y: 1700, fontSize: 28 },
+      bg: { x: 0, y: 0, w: 1080, h: 1920 },
+      overlay: { x: 0, y: 0, w: 1080, h: 1920 }
+    }
+  },
+  layout: {
+    autoLayout: {
+      padding: {
+        vertical: 64,
+        horizontal: 40
+      },
+      spacing: 24
+    },
+    contentGroup: {
+      layout: "VERTICAL",
+      alignment: "TOP_LEFT"
+    },
+    ctaGroup: {
+      layout: "HORIZONTAL",
+      padding: {
+        vertical: 16,
+        horizontal: 24
+      }
+    }
   }
 };
 
@@ -399,39 +434,28 @@ async function generateVariants(sizes: string[]) {
     await Promise.all(fontPromises);
   }
   
-  let currentX = template.x + template.width + 100;
-  
+  // Create variants
   for (const size of sizes) {
     const [width, height] = size.split('x').map(Number);
     const variant = template.clone();
     variant.name = `${template.name} ${width}x${height}`;
-    
-    // First resize the variant
     variant.resize(width, height);
+    
+    // Position below the original with some spacing
+    variant.x = template.x;
+    variant.y = template.y + template.height + 100;
     
     // Scale text nodes if any
     const scale = Math.min(width / template.width, height / template.height);
     const variantTextNodes = variant.findAll(node => node.type === 'TEXT') as TextNode[];
+    
     variantTextNodes.forEach(node => {
       if (node.fontSize !== figma.mixed) {
         node.fontSize = Math.round(node.fontSize * scale);
       }
     });
     
-    // Position after resize and before append
-    variant.x = currentX;
-    variant.y = template.y;
-    
-    // Log position for debugging
-    console.log('Variant position:', {
-      name: variant.name,
-      x: variant.x,
-      y: variant.y
-    });
-    
-    // Add to parent and update position for next variant
     parent.appendChild(variant);
-    currentX = variant.x + variant.width + 100;
   }
 }
 
@@ -562,7 +586,7 @@ async function main(): Promise<void> {
     };
     await figma.clientStorage.setAsync('guidelines', guidelines);
 
-
+    figma.showUI(__html__, { width: 320, height: 280 });
 
     figma.ui.onmessage = async (msg: { type: string; sizes?: string[] }) => {
       if (msg.type === 'generate' && msg.sizes && msg.sizes.length > 0) {
