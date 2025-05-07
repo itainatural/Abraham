@@ -1,0 +1,216 @@
+<html>
+<head>
+  <title>Abraham - Multi-Format Ad Generator</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body {
+      font-size: 13px;
+      line-height: 1.4;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      height: 100%;
+      color: #333;
+      background: #fff;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    .content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      gap: 16px;
+      padding: 16px;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .tabs {
+      display: flex;
+      justify-content: space-between;
+      padding: 0;
+      margin: 0 0 24px;
+      border-bottom: 1px solid #e5e5e5;
+      width: 100%;
+      overflow-x: hidden;
+    }
+    .tab {
+      padding: 12px 0;
+      cursor: pointer;
+      color: #999;
+      text-align: center;
+      font-weight: 500;
+      font-size: 20px;
+      transition: all 0.2s ease;
+      user-select: none;
+      position: relative;
+      white-space: nowrap;
+    }
+    .tab:hover {
+      color: #333;
+    }
+    .tab.active {
+      color: #333;
+    }
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #333;
+    }
+    .sizes {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      padding: 4px;
+      flex: 1;
+    }
+    .sizes.active {
+      display: flex;
+    }
+    .size-option {
+      padding: 16px;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      font-weight: 500;
+      background: #fff;
+      user-select: none;
+      margin: 0 4px;
+    }
+    .size-option:hover {
+      border-color: #18A0FB;
+      background: #fafafa;
+    }
+    .size-option.selected {
+      background: rgba(24, 160, 251, 0.08);
+      color: #18A0FB;
+      border-color: #18A0FB;
+    }
+    #generate {
+      background: #18A0FB;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      margin-top: auto;
+    }
+    #generate:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    #generate:not(:disabled):hover {
+      background: #0091F8;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+  <div class="content">
+    <div class="tabs">
+      <div class="tab active" data-platform="Demand-Gen">Demand-Gen</div>
+      <div class="tab" data-platform="Facebook">Facebook</div>
+      <div class="tab" data-platform="Native">Native</div>
+    </div>
+
+    <div id="Demand-Gen" class="sizes active">
+      <div class="size-option" data-size="1200x1200">1200×1200</div>
+      <div class="size-option" data-size="960x1200">960×1200</div>
+      <div class="size-option" data-size="1200x628">1200×628</div>
+    </div>
+
+    <div id="Facebook" class="sizes">
+      <div class="size-option" data-size="1080x1920">1080×1920</div>
+      <div class="size-option" data-size="1080x1350">1080×1350</div>
+    </div>
+
+    <div id="Native" class="sizes">
+      <div class="size-option" data-size="1200x627">1200×627</div>
+      <div class="size-option" data-size="1080x1080">1080×1080</div>
+      <div class="size-option" data-size="1200x1200">1200×1200</div>
+    </div>
+  </div>
+
+  <button id="generate" disabled>Generate Variants</button>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const sizeContainers = document.querySelectorAll('.sizes');
+    const generate = document.getElementById('generate');
+    const selectedSizes = new Set();
+
+    // Initialize UI state
+    let currentPlatform = 'Demand-Gen';
+
+    // Update generate button state
+    function updateGenerateButton() {
+      const button = document.getElementById('generate');
+      button.disabled = selectedSizes.size === 0;
+    }
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.onclick = () => {
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Show corresponding sizes
+        currentPlatform = tab.dataset.platform;
+        document.querySelectorAll('.sizes').forEach(s => s.classList.remove('active'));
+        document.getElementById(currentPlatform).classList.add('active');
+
+        // Clear selections when switching platforms
+        selectedSizes.clear();
+        document.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('selected'));
+        updateGenerateButton();
+      };
+    });
+
+    // Size selection
+    document.querySelectorAll('.size-option').forEach(option => {
+      option.onclick = () => {
+        const size = option.dataset.size;
+        if (option.classList.contains('selected')) {
+          option.classList.remove('selected');
+          selectedSizes.delete(size);
+        } else {
+          option.classList.add('selected');
+          selectedSizes.add(size);
+        }
+        updateGenerateButton();
+      };
+    });
+
+    // Generate variants
+    document.getElementById('generate').onclick = () => {
+      parent.postMessage({
+        pluginMessage: {
+          type: 'generate',
+          sizes: Array.from(selectedSizes)
+        }
+      }, '*');
+    };
+
+    // Initialize generate button state
+    updateGenerateButton();
+  </script>
+</body>
+</html>

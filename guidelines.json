@@ -1,0 +1,91 @@
+{
+  "formats": {
+    "1200x1200": {
+      "aspectRatio": 1,
+      "title": { "x": 80, "y": 100, "fontSize": 56 },
+      "body": { "x": 80, "y": 200, "fontSize": 28 },
+      "cta-label": { "x": 80, "y": 1000, "fontSize": 24 },
+      "bg": { "x": 0, "y": 0, "w": 1200, "h": 1200 },
+      "overlay": { "x": 0, "y": 0, "w": 1200, "h": 1200 }
+    },
+    "960x1200": {
+      "aspectRatio": 0.8,
+      "title": { "x": 80, "y": 100, "fontSize": 56 },
+      "body": { "x": 80, "y": 200, "fontSize": 28 },
+      "cta-label": { "x": 80, "y": 1000, "fontSize": 24 },
+      "bg": { "x": 0, "y": 0, "w": 960, "h": 1200 },
+      "overlay": { "x": 0, "y": 0, "w": 960, "h": 1200 }
+    },
+    "1200x628": {
+      "aspectRatio": 1.91,
+      "title": { "x": 80, "y": 80, "fontSize": 48 },
+      "body": { "x": 80, "y": 160, "fontSize": 24 },
+      "cta-label": { "x": 80, "y": 500, "fontSize": 24 },
+      "bg": { "x": 0, "y": 0, "w": 1200, "h": 628 },
+      "overlay": { "x": 0, "y": 0, "w": 1200, "h": 628 }
+    },
+    "1080x1920": {
+      "aspectRatio": 0.5625,
+      "title": { "x": 80, "y": 240, "fontSize": 64 },
+      "body": { "x": 80, "y": 360, "fontSize": 32 },
+      "cta-label": { "x": 80, "y": 1700, "fontSize": 28 },
+      "bg": { "x": 0, "y": 0, "w": 1080, "h": 1920 },
+      "overlay": { "x": 0, "y": 0, "w": 1080, "h": 1920 }
+    }
+  },
+  "layout": {
+    "autoLayout": {
+      "padding": {
+        "vertical": 64,
+        "horizontal": 40
+      },
+      "spacing": 24
+    },
+    "content-group": {
+      "padding": {
+        "vertical": 64,
+        "horizontal": 40
+      },
+      "spacing": 24,
+      "alignment": "TOP_LEFT"
+    },
+    "ctaGroup": {
+      "layout": "HORIZONTAL",
+      "padding": {
+        "vertical": 16,
+        "horizontal": 32
+      },
+      "spacing": 8
+    }
+  },
+  "styles": {
+    "title": {
+      "font": "Inter",
+      "weight": "Bold",
+      "color": { "r": 0, "g": 0, "b": 0 }
+    },
+    "body": {
+      "font": "Inter",
+      "weight": "Regular",
+      "color": { "r": 0.4, "g": 0.4, "b": 0.4 }
+    },
+    "cta-label": {
+      "font": "Inter",
+      "weight": "Medium",
+      "color": { "r": 1, "g": 1, "b": 1 }
+    },
+    "bg": {
+      "fill": { "type": "SOLID", "color": { "r": 0.9, "g": 0.9, "b": 0.9 } }
+    },
+    "overlay": {
+      "fill": {
+        "type": "GRADIENT_LINEAR",
+        "opacity": 0.4,
+        "stops": [
+          { "position": 0, "color": { "r": 0, "g": 0, "b": 0, "a": 1 } },
+          { "position": 1, "color": { "r": 0, "g": 0, "b": 0, "a": 0 } }
+        ]
+      }
+    }
+  }
+}

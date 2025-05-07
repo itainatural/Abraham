@@ -1,0 +1,19 @@
+{
+  "name": "Abraham - Multi-Format Ad Generator",
+  "id": "1496877767608157899",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "documentAccess": "dynamic-page",
+  "editorType": [
+    "figma"
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "*"
+    ],
+    "reasoning": "Plugin needs to load user-provided images from any domain to create variants"
+  }
+}

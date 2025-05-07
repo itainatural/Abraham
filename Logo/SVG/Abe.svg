@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 279.99 125.23">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+
+      .cls-1, .cls-2 {
+        stroke: #000;
+        stroke-miterlimit: 10;
+        stroke-width: 5px;
+      }
+
+      .cls-3 {
+        fill: #030000;
+        font-family: Roboto-CondensedSemiBold, Roboto;
+        font-size: 103.21px;
+        font-variation-settings: 'wght' 600, 'wdth' 75;
+        font-weight: 600;
+      }
+
+      .cls-2 {
+        fill: url(#linear-gradient);
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="58.16" y1="83.06" x2="79.77" y2="61.45" gradientTransform="translate(0 0)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff8412"/>
+      <stop offset=".2" stop-color="#fe4611"/>
+      <stop offset=".53" stop-color="#fc000f"/>
+      <stop offset=".96" stop-color="#ed016d"/>
+    </linearGradient>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <rect x="0" y="0" width="110.52" height="110.52" rx="55.26" ry="55.26"/>
+      <g>
+        <rect class="cls-1" x="55.18" y="27.78" width="27.58" height="33.99" rx="4.55" ry="4.55"/>
+        <rect class="cls-2" x="55.18" y="61.77" width="27.58" height="20.96" rx="4.55" ry="4.55"/>
+        <rect class="cls-1" x="27.76" y="27.78" width="27.42" height="54.83" rx="4.55" ry="4.55"/>
+      </g>
+      <text class="cls-3" transform="translate(122.75 97.26)"><tspan x="0" y="0">Abe</tspan></text>
+    </g>
+  </g>
+</svg>
