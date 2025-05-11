@@ -158,5 +158,63 @@
       }, '*');
     };
   </script>
+  <section id="timeline-wrapper">
+    <h3>Agent Timeline</h3>
+    <div id="timeline"></div>
+    <label>
+      <input type="checkbox" id="debugToggle">
+      Verbose logs
+    </label>
+  </section>
+
+  <style>
+    #timeline-wrapper {
+      font: 12px/1.4 Inter, sans-serif;
+      border-top: 1px solid #eee;
+      margin-top: 8px;
+      max-height: 240px;
+      overflow: auto;
+    }
+    #timeline-wrapper h3 {
+      margin: 4px 0 4px 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #888;
+    }
+    #timeline pre {
+      margin: 0;
+      padding: 2px 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .MANAGER   { color:#0b74ff }
+    .LAYOUT    { color:#2ca02c }
+    .TYPO      { color:#d62728 }
+    .QA        { color:#ff7f0e }
+    .WARN      { color:#c51f5d }
+  </style>
+
+  <script>
+    const timeline = document.getElementById('timeline');
+    const debugToggle = document.getElementById('debugToggle');
+
+    window.onmessage = (event) => {
+      console.log('UI received message:', event.data.pluginMessage);
+      const msg = event.data.pluginMessage;
+      if (!msg || msg.type !== 'TIMELINE') return;
+
+      const row = document.createElement('pre');
+      row.className = msg.channel;
+      row.textContent = `[${msg.channel}] ${JSON.stringify(msg.payload)}`;
+      timeline.appendChild(row);
+
+      // auto-scroll to newest entry
+      timeline.scrollTop = timeline.scrollHeight;
+    };
+
+    debugToggle.onchange = (e) =>
+      parent.postMessage({ pluginMessage: { type: 'DEBUG_TOGGLE', enable: e.target.checked } }, '*');
+  </script>
 </body>
 </html>

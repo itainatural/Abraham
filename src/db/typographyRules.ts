@@ -1,0 +1,21 @@
+import { TypographyRules } from './index';
+
+export const typographyRules: TypographyRules = {
+  formats: {
+    "1200x1200": {
+      title: { font: "Inter", weight: "Bold", size: 72 },
+      body: { font: "Inter", weight: "Regular", size: 24 },
+      "cta-label": { font: "Inter", weight: "Bold", size: 24 }
+    },
+    "960x1200": {
+      title: { font: "Inter", weight: "Bold", size: 64 },
+      body: { font: "Inter", weight: "Regular", size: 24 },
+      "cta-label": { font: "Inter", weight: "Bold", size: 24 }
+    },
+    "1200x628": {
+      title: { font: "Inter", weight: "Bold", size: 56 },
+      body: { font: "Inter", weight: "Regular", size: 24 },
+      "cta-label": { font: "Inter", weight: "Bold", size: 24 }
+    }
+  }
+};
